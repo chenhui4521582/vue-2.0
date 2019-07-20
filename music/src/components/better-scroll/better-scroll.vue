@@ -39,7 +39,6 @@ export default {
         })
       }
     },
-
     refresh () {
       this.Scroll && this.Scroll.refresh()
     },
@@ -47,6 +46,9 @@ export default {
       window.addEventListener('resize', () => {
         this._refresh()
       })
+    },
+    scrollToElement (element) {
+      this.Scroll.scrollToElement(element)
     }
   },
   mounted () {

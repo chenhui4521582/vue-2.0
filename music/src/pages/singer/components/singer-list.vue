@@ -1,6 +1,7 @@
 <template>
   <div class="singer-list">
     <better-scroll
+      ref="better-scroll"
       :data="singerData"
       :listenScroll="true"
       @scrollCallBack = "scrollCallBack"
@@ -13,7 +14,11 @@
         >
           <h5>{{item.title}}</h5>
           <div class="group">
-            <div class="list" v-for="(inlineItems, inlineIndex) in item.items" :key="inlineIndex">
+            <div class="list"
+              v-for="(inlineItems, inlineIndex) in item.items"
+              :key="inlineIndex"
+              @click="__searchSinger(inlineItems)"
+            >
               <div class="avatar">
                 <img v-lazy="inlineItems.avatar" alt="">
               </div>
@@ -25,7 +30,12 @@
         </div>
       </div>
     </better-scroll>
-    <div class="letter">
+    <div class="letter"
+      ref="letter"
+      @touchstart.stop="letterTouchStart"
+      @touchmove.stop="letterTouchMove"
+      @touchstop.stop="letterTouchStop"
+    >
       <ul>
         <li
           v-for="(item, index) in singerData"
@@ -53,7 +63,10 @@ export default {
   data: () => ({
     currentIndex: 0,
     GroupHeight: [],
-    scrollY: 0
+    scrollY: 0,
+    touchLock: false,
+    timer: null,
+    letterIndex: 0
   }),
   components: {
     BetterScroll
@@ -73,6 +86,32 @@ export default {
         height += item.clientHeight
         this.GroupHeight.push(height)
       })
+    },
+    letterTouchStart () {
+      this.touchLock = true
+    },
+    letterTouchMove (e) {
+      if (this.touchLock) {
+        if (this.timer) {
+          clearTimeout(this.timer)
+        }
+        this.timer = setTimeout(() => {
+          let element = this.$refs.letter
+          let top = element.offsetTop + 108
+          let touchY = e.touches[0].clientY;
+          let index = Math.floor((touchY - top) / 20)
+          if (index >= 0 && index < this.singerData.length) {
+            let scrollToElement = this.$refs['scroll-box'][index]
+            this.$refs['better-scroll'].scrollToElement(scrollToElement)
+          }
+        }, 30)
+      }
+    },
+    letterTouchStop () {
+      this.touch = false
+    },
+    __searchSinger (item) {
+      this.$emit('__searchSinger', item)
     }
   },
   mounted () {
@@ -130,10 +169,9 @@ export default {
         font-size: 14px;
 .letter
   position: absolute
-  z-index: 30
+  z-index: 10
   right: 0
-  top: 50%
-  transform: translateY(-50%)
+  top: 10%
   width: 20px
   padding: 20px 0
   border-radius: 10px
@@ -141,8 +179,10 @@ export default {
   background: $color-background-d
   font-family: Helvetica
   li
+    box-sizing border-box
+    height 20px
+    line-height 20px
     padding: 3px
-    line-height: 1
     color: $color-text-l
     font-size: $font-size-small
     &.current

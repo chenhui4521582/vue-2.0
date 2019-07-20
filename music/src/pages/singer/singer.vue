@@ -3,10 +3,15 @@
     <singer-list
       v-if="showList"
       :singerData="singerData"
+      @__searchSinger="__searchSinger"
     />
     <div class="loading" v-if="!showList">
       <loading />
     </div>
+    <!--新手详情路由-->
+    <transition name="slide">
+      <router-view />
+    </transition>
   </div>
 </template>
 
@@ -14,6 +19,7 @@
 import Api from 'api/singer'
 import singerList from './components/singer-list'
 import Loading from 'components/loading/loading'
+import { mapMutations } from 'vuex'
 export default {
   name: 'singer',
   data: () => ({
@@ -24,6 +30,15 @@ export default {
     Loading
   },
   methods: {
+    ...mapMutations({
+      setSinger: 'SET_SINGER'
+    }),
+    __searchSinger (e) {
+      this.setSinger(e)
+      this.$router.push({
+        path: `/singer/${e.id}`
+      })
+    },
     _getSinger () {
       Api.getSinger().then(res => {
         let { code, data } = res
@@ -34,7 +49,7 @@ export default {
     },
     concatData (item) {
       return {
-        id: item.Fsinger_id,
+        id: item.Fsinger_mid,
         avatar: `https://y.gtimg.cn/music/photo_new/T001R300x300M000${item.Fsinger_mid}.jpg?max_age=2592000`,
         name: item.Fsinger_name
       }
@@ -49,14 +64,15 @@ export default {
       list.forEach((item, index) => {
         if (index < 10) {
           map.hot.items.push(this.concatData(item))
+        } else {
+		  if (!map[item.Findex]) {
+            map[item.Findex] = {
+			  title: item.Findex,
+			  items: []
+            }
+		  }
+		  map[item.Findex].items.push(this.concatData(item))
         }
-        if (!map[item.Findex]) {
-          map[item.Findex] = {
-            title: item.Findex,
-            items: []
-          }
-        }
-        map[item.Findex].items.push(this.concatData(item))
       })
       let hot = []; let singer = []
       for (let i in map) {
@@ -98,4 +114,8 @@ export default {
   left 50%
   top 50%
   transform translate(-50%, -50%)
+.slide-enter-active, .slide-leave-active
+  transition: all 0.3s
+.slide-enter, .slide-leave-to
+  transform: translate3d(100%, 0, 0)
 </style>
